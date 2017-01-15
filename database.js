@@ -1,25 +1,54 @@
-import mongoose from 'mongoose'
+import mongoose, { Schema } from 'mongoose'
 
-const UserSchema = new mongoose.Schema({
+/*
+ * User Scema & Methods
+ */
+const UserSchema = new Schema({
   firstName: {
-    type: String
+    type: String,
+    required: true
   },
   lastName: {
-    type: String
+    type: String,
+    required: true
   },
   email: {
-    type: String
+    type: String,
+    unique: true,
+    required: true
   }
 })
 
-const getUsers = args => mongoose.model('User').find((error, users) => {
-  error && console.warn('getUsers:', error)
-  return users
+let User = mongoose.model('User', UserSchema)
+
+const getUsers = args => User.find().limit(args.limit || 10)
+const getCommentsByAuthor = user => Comment.find({_author: user._id})
+
+/*
+ * Comment Scema & Methods
+ */
+
+const CommentSchema = new Schema({
+  _author: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  text: {
+    type: String,
+    required: true
+  }
 })
 
-const User = mongoose.model('User', UserSchema)
+let Comment = mongoose.model('Comment', CommentSchema)
+
+const getComments = args => Comment.find().limit(args.limit || 10)
+const getAuthorByComment = comment => User.find({_id: comment._author}).then(doc => doc[0])
 
 module.exports = {
   User,
-  getUsers
+  getUsers,
+  Comment,
+  getComments,
+  getCommentsByAuthor,
+  getAuthorByComment
 }

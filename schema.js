@@ -2,11 +2,32 @@ import {
   GraphQLInt,
   GraphQLList,
   GraphQLObjectType,
+  GraphQLNonNull,
   GraphQLSchema,
   GraphQLString
 } from 'graphql'
 
-import { getUsers } from './database'
+import {
+  getUsers,
+  getComments,
+  getCommentsByAuthor,
+  getAuthorByComment} from './database'
+
+const commentType = new GraphQLObjectType({
+  name: 'Comment',
+  description: 'A comment made by a user',
+  fields: () => ({
+    author: {
+      type: userType,
+      description: 'The user that made the comment',
+      resolve: comment => getAuthorByComment(comment)
+    },
+    text: {
+      type: GraphQLString,
+      description: 'The content of te comment'
+    }
+  })
+})
 
 const userType = new GraphQLObjectType({
   name: 'User',
@@ -23,6 +44,11 @@ const userType = new GraphQLObjectType({
     email: {
       type: GraphQLString,
       description: 'Email address of user'
+    },
+    comments: {
+      type: new GraphQLList(commentType),
+      description: 'All comments made by this user',
+      resolve: user => getCommentsByAuthor(user)
     }
   })
 })
@@ -33,15 +59,22 @@ const queryType = new GraphQLObjectType({
     users: {
       type: new GraphQLList(userType),
       args: {
-        id: {
-          name: 'id',
-          type: GraphQLInt
-        },
-        email: {
-          type: GraphQLString
+        limit: {
+          name: 'limit',
+          type: new GraphQLNonNull(GraphQLInt)
         }
       },
-      resolve: (root, args) => getUsers()
+      resolve: (root, args) => getUsers(args)
+    },
+    comments: {
+      type: new GraphQLList(commentType),
+      args: {
+        limit: {
+          name: 'limit',
+          type: new GraphQLNonNull(GraphQLInt)
+        }
+      },
+      resolve: (root, args) => getComments(args)
     }
   })
 })
