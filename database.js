@@ -4,6 +4,11 @@ import mongoose, { Schema } from 'mongoose'
  * User Scema & Methods
  */
 const UserSchema = new Schema({
+  username: {
+    type: String,
+    required: true,
+    unique: true
+  },
   firstName: {
     type: String,
     required: true
@@ -21,8 +26,16 @@ const UserSchema = new Schema({
 
 let User = mongoose.model('User', UserSchema)
 
-const getUsers = args => User.find().limit(args.limit || 10)
+const getUser = ({username}) => User.findOne({username})
+
+const getUsers = ({limit}) => User.find().limit(limit || 10)
+
 const getCommentsByAuthor = user => Comment.find({_author: user._id})
+
+const createUser = ({username, firstName, lastName, email}) => {
+  let newUser = new User({username, firstName, lastName, email})
+  return newUser.save()
+}
 
 /*
  * Comment Scema & Methods
@@ -41,12 +54,24 @@ const CommentSchema = new Schema({
 
 let Comment = mongoose.model('Comment', CommentSchema)
 
-const getComments = args => Comment.find().limit(args.limit || 10)
-const getAuthorByComment = comment => User.find({_id: comment._author}).then(doc => doc[0])
+const getComments = ({limit}) => Comment.find().limit(limit || 10)
+const getAuthorByComment = ({_author}) => User.findOne({_id: _author})
+
+/*
+ * Helper functions
+ */
+
+const deleteUndefKeys = object => {
+  Object.keys(object).map(key => {
+    if (typeof object[key] === 'undefined') delete object[key]
+  })
+}
 
 module.exports = {
   User,
+  getUser,
   getUsers,
+  createUser,
   Comment,
   getComments,
   getCommentsByAuthor,

@@ -19,6 +19,7 @@ const createFakeUsers = () => {
   return new Promise((resolve, reject) => {
     _.times(users, index => {
       let user = new User({
+        username: Faker.internet.userName(),
         firstName: Faker.name.firstName(),
         lastName: Faker.name.lastName(),
         email: Faker.internet.email()

@@ -8,7 +8,9 @@ import {
 } from 'graphql'
 
 import {
+  getUser,
   getUsers,
+  createUser,
   getComments,
   getCommentsByAuthor,
   getAuthorByComment} from './database'
@@ -20,7 +22,7 @@ const commentType = new GraphQLObjectType({
     author: {
       type: userType,
       description: 'The user that made the comment',
-      resolve: comment => getAuthorByComment(comment)
+      resolve: ({_author}) => getAuthorByComment({_author})
     },
     text: {
       type: GraphQLString,
@@ -33,6 +35,10 @@ const userType = new GraphQLObjectType({
   name: 'User',
   description: 'A person who uses our app',
   fields: () => ({
+    username: {
+      type: GraphQLString,
+      description: 'Unique identifier for user'
+    },
     firstName: {
       type: GraphQLString,
       description: 'First name of user'
@@ -61,20 +67,30 @@ const queryType = new GraphQLObjectType({
       args: {
         limit: {
           name: 'limit',
-          type: new GraphQLNonNull(GraphQLInt)
+          type: GraphQLInt
         }
       },
-      resolve: (root, args) => getUsers(args)
+      resolve: (root, {limit}) => getUsers({limit})
+    },
+    user: {
+      type: userType,
+      args: {
+        username: {
+          name: 'username',
+          type: new GraphQLNonNull(GraphQLString)
+        }
+      },
+      resolve: (root, {username}) => getUser({username})
     },
     comments: {
       type: new GraphQLList(commentType),
       args: {
         limit: {
           name: 'limit',
-          type: new GraphQLNonNull(GraphQLInt)
+          type: GraphQLInt
         }
       },
-      resolve: (root, args) => getComments(args)
+      resolve: (root, {limit}) => getComments({limit})
     }
   })
 })
@@ -82,10 +98,32 @@ const queryType = new GraphQLObjectType({
 const mutationType = new GraphQLObjectType({
   name: 'Mutation',
   fields: () => ({
+    createUser: {
+      type: userType,
+      args: {
+        username: {
+          type: new GraphQLNonNull(GraphQLString),
+          description: 'Unique identifier for user'
+        },
+        firstName: {
+          type: new GraphQLNonNull(GraphQLString),
+          description: 'First name of user'
+        },
+        lastName: {
+          type: new GraphQLNonNull(GraphQLString),
+          description: 'Last name of user'
+        },
+        email: {
+          type: new GraphQLNonNull(GraphQLString),
+          description: 'Email address of user'
+        }
+      },
+      resolve: (root, args) => createUser(args)
+    }
   })
 })
 
 export var Schema = new GraphQLSchema({
-  query: queryType
-  // mutation: mutationType
+  query: queryType,
+  mutation: mutationType
 })
