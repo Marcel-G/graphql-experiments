@@ -30,7 +30,7 @@ const getUser = ({username}) => User.findOne({username})
 
 const getUsers = ({limit}) => User.find().limit(limit || 10)
 
-const getCommentsByAuthor = user => Comment.find({_author: user._id})
+const getCommentsByAuthor = user => Comment.find({_author: user.id})
 
 const createUser = ({username, firstName, lastName, email}) => {
   let newUser = new User({username, firstName, lastName, email})
@@ -55,7 +55,15 @@ const CommentSchema = new Schema({
 let Comment = mongoose.model('Comment', CommentSchema)
 
 const getComments = ({limit}) => Comment.find().limit(limit || 10)
+
 const getAuthorByComment = ({_author}) => User.findOne({_id: _author})
+
+const createComment = ({username, text}) => {
+  return getUser({username}).then(author => {
+    let newComment = new Comment({_author: author._id, text})
+    return newComment.save()
+  })
+}
 
 /*
  * Helper functions
@@ -75,5 +83,6 @@ module.exports = {
   Comment,
   getComments,
   getCommentsByAuthor,
+  createComment,
   getAuthorByComment
 }

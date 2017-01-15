@@ -13,6 +13,7 @@ import {
   createUser,
   getComments,
   getCommentsByAuthor,
+  createComment,
   getAuthorByComment} from './database'
 
 const commentType = new GraphQLObjectType({
@@ -119,6 +120,20 @@ const mutationType = new GraphQLObjectType({
         }
       },
       resolve: (root, args) => createUser(args)
+    },
+    createComment: {
+      type: commentType,
+      args: {
+        username: {
+          type: new GraphQLNonNull(GraphQLString),
+          description: 'Author of comment'
+        },
+        text: {
+          type: new GraphQLNonNull(GraphQLString),
+          description: 'Comment text'
+        }
+      },
+      resolve: (root, args) => createComment(args)
     }
   })
 })
