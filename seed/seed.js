@@ -1,6 +1,8 @@
 import Faker from 'faker'
 import _ from 'lodash'
-import { db, User, Comment } from '../database'
+import { db, User, Thread, Comment } from '../database'
+
+let fakeUsers, fakeComments, fakeThreads
 
 const randomInt = (min, max) => {
   min = Math.ceil(min)
@@ -9,7 +11,7 @@ const randomInt = (min, max) => {
 }
 
 const createFakeUsers = count => {
-  let users = Array(count).fill().map(() => {
+  fakeUsers = Array(count).fill().map(() => {
     return new User({
       username: Faker.internet.userName(),
       firstName: Faker.name.firstName(),
@@ -18,21 +20,23 @@ const createFakeUsers = count => {
     })
   })
 
-  return Promise.all(users.map(user => user.save())).then(() => {
-    console.log(`${users.length} users added.`)
-    return users
+  return Promise.all(fakeUsers.map(user => user.save())).then(() => {
+    console.log(`${fakeUsers.length} users added.`)
+    return fakeUsers
   })
 }
 
 const createFakeThreads = count => {
-  let threads = Array(count).fill().map(() => {
+  fakeThreads = Array(count).fill().map(() => {
     return new Thread({
-      title: Faker.lorem.words()
+      title: Faker.lorem.words(randomInt(3, 7)),
+      description: Faker.lorem.paragraph(),
+      _author: fakeUsers[randomInt(0, fakeUsers.length)].id
     })
   })
-  return Promise.all(threads.map(thread => thread.save())).then(() => {
-    console.log(`${users.length} threads added.`)
-    return threads
+  return Promise.all(fakeThreads.map(thread => thread.save())).then(() => {
+    console.log(`${fakeThreads.length} threads added.`)
+    return fakeThreads
   })
 }
 
@@ -40,14 +44,15 @@ const createFakeComments = users => {
   const generateComments = (user, count) => Array(count).fill().map(() => {
     return new Comment({
       _author: user.id,
+      _thread: fakeThreads[randomInt(0, fakeThreads.length)].id,
       text: Faker.lorem.paragraph()
     })
   })
-  let comments = _.flatMap(users, user => generateComments(user, randomInt(0, 10)))
-  return Promise.all(comments.map(comment => comment.save()))
+  fakeComments = _.flatMap(users, user => generateComments(user, randomInt(0, 10)))
+  return Promise.all(fakeComments.map(comment => comment.save()))
   .then(() => {
-    console.log(`${comments.length} comments added.`)
-    return comments
+    console.log(`${fakeComments.length} comments added.`)
+    return fakeComments
   })
 }
 
@@ -61,9 +66,10 @@ const deleteTables = tables => {
 }
 
 console.log('Seeding database.')
-deleteTables(['users', 'comments'])
+deleteTables(['users', 'comments', 'threads'])
 .then(() => createFakeUsers(100))
-.then(createFakeComments)
+.then(() => createFakeThreads(10))
+.then(() => createFakeComments(fakeUsers))
 .then(() => {
   db.close()
 })

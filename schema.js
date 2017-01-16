@@ -11,10 +11,11 @@ import {
   getUser,
   getUsers,
   createUser,
+  getThread,
+  getThreads,
   getComments,
-  getCommentsByAuthor,
-  createComment,
-  getAuthorByComment} from './database'
+  createComment
+} from './database'
 
 const commentType = new GraphQLObjectType({
   name: 'Comment',
@@ -23,11 +24,41 @@ const commentType = new GraphQLObjectType({
     author: {
       type: userType,
       description: 'The user that made the comment',
-      resolve: ({_author}) => getAuthorByComment({_author})
+      resolve: ({_author}) => getUser({ _id: _author })
     },
     text: {
       type: GraphQLString,
       description: 'The content of te comment'
+    },
+    thread: {
+      type: threadType,
+      description: 'The thread this comment belongs to.',
+      resolve: ({_thread}) => getThread({_id: _thread})
+    }
+  })
+})
+
+const threadType = new GraphQLObjectType({
+  name: 'Thread',
+  description: 'A conversation thread',
+  fields: () => ({
+    title: {
+      type: GraphQLString,
+      description: 'Thread title.'
+    },
+    description: {
+      type: GraphQLString,
+      description: 'Description of thread.'
+    },
+    author: {
+      type: userType,
+      description: 'Creator of thread',
+      resolve: ({_author}) => getUser({ _id: _author })
+    },
+    comments: {
+      type: new GraphQLList(commentType),
+      description: 'A list of comments within the thread.',
+      resolve: ({_id}) => getComments({ _thread: _id })
     }
   })
 })
@@ -55,7 +86,12 @@ const userType = new GraphQLObjectType({
     comments: {
       type: new GraphQLList(commentType),
       description: 'All comments made by this user',
-      resolve: user => getCommentsByAuthor(user)
+      resolve: ({_id}) => getComments({_author: _id})
+    },
+    threads: {
+      type: new GraphQLList(threadType),
+      description: 'All threads made by this user',
+      resolve: ({_id}) => getThreads({_author: _id})
     }
   })
 })
@@ -92,6 +128,16 @@ const queryType = new GraphQLObjectType({
         }
       },
       resolve: (root, {limit}) => getComments({limit})
+    },
+    threads: {
+      type: new GraphQLList(threadType),
+      args: {
+        limit: {
+          name: 'limit',
+          type: GraphQLInt
+        }
+      },
+      resolve: (root, {limit}) => getThreads({limit})
     }
   })
 })

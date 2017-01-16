@@ -34,15 +34,45 @@ const UserSchema = new Schema({
 
 let User = mongoose.model('User', UserSchema)
 
-const getUser = ({username}) => User.findOne({username})
+const getUser = ({_id, username}) => {
+  let find = {_id, username}
+  deleteUndefKeys(find)
+  return User.findOne(find)
+}
 
 const getUsers = ({limit}) => User.find().limit(limit || 10)
-
-const getCommentsByAuthor = user => Comment.find({_author: user.id})
 
 const createUser = ({username, firstName, lastName, email}) => {
   let newUser = new User({username, firstName, lastName, email})
   return newUser.save()
+}
+
+/*
+ * Threads Scema & Methods
+ */
+
+const ThreadSchema = new Schema({
+  title: {
+    type: String,
+    required: true
+  },
+  description: {
+    type: String
+  },
+  _author: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  }
+})
+
+let Thread = mongoose.model('Thread', ThreadSchema)
+
+const getThread = ({_id}) => Thread.findOne({_id})
+
+const getThreads = ({limit, _author}) => {
+  let find = {_author}
+  deleteUndefKeys(find)
+  return Thread.find(find).limit(limit || 10)
 }
 
 /*
@@ -54,6 +84,10 @@ const CommentSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'User'
   },
+  _thread: {
+    type: Schema.Types.ObjectId,
+    ref: 'Thread'
+  },
   text: {
     type: String,
     required: true
@@ -62,9 +96,11 @@ const CommentSchema = new Schema({
 
 let Comment = mongoose.model('Comment', CommentSchema)
 
-const getComments = ({limit}) => Comment.find().limit(limit || 10)
-
-const getAuthorByComment = ({_author}) => User.findOne({_id: _author})
+const getComments = ({limit, _author, _thread}) => {
+  let find = {_author, _thread}
+  deleteUndefKeys(find)
+  return Comment.find(find).limit(limit || 10)
+}
 
 const createComment = ({username, text}) => {
   return getUser({username}).then(author => {
@@ -89,9 +125,10 @@ module.exports = {
   getUser,
   getUsers,
   createUser,
+  Thread,
+  getThread,
+  getThreads,
   Comment,
   getComments,
-  getCommentsByAuthor,
-  createComment,
-  getAuthorByComment
+  createComment
 }
