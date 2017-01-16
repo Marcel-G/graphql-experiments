@@ -1,10 +1,6 @@
-import mongoose from 'mongoose'
 import Faker from 'faker'
 import _ from 'lodash'
-import { User, Comment } from '../database'
-
-mongoose.connect('mongodb://localhost/graphql')
-const db = mongoose.connection
+import { db, User, Comment } from '../database'
 
 const randomInt = (min, max) => {
   min = Math.ceil(min)
@@ -57,5 +53,5 @@ deleteTables(['users', 'comments'])
 .then(() => createFakeUsers(100))
 .then(createFakeComments)
 .then(() => {
-  mongoose.connection.close()
+  db.close()
 })

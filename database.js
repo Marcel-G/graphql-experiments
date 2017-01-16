@@ -1,5 +1,13 @@
 import mongoose, { Schema } from 'mongoose'
 
+mongoose.Promise = global.Promise
+
+if (process.env.NODE_ENV !== 'test') {
+  mongoose.connect('mongodb://localhost/graphql')
+}
+
+const db = mongoose.connection
+
 /*
  * User Scema & Methods
  */
@@ -76,6 +84,7 @@ const deleteUndefKeys = object => {
 }
 
 module.exports = {
+  db,
   User,
   getUser,
   getUsers,
