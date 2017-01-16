@@ -24,6 +24,18 @@ const createFakeUsers = count => {
   })
 }
 
+const createFakeThreads = count => {
+  let threads = Array(count).fill().map(() => {
+    return new Thread({
+      title: Faker.lorem.words()
+    })
+  })
+  return Promise.all(threads.map(thread => thread.save())).then(() => {
+    console.log(`${users.length} threads added.`)
+    return threads
+  })
+}
+
 const createFakeComments = users => {
   const generateComments = (user, count) => Array(count).fill().map(() => {
     return new Comment({
