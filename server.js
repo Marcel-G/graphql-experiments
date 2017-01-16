@@ -2,7 +2,7 @@ import express from 'express'
 import graphQLHTTP from 'express-graphql'
 import mongoose from 'mongoose'
 
-const GRAPHQL_PORT = 3200
+const GRAPHQL_PORT = 3222
 
 if (process.env.NODE_ENV !== 'test') {
   mongoose.connect('mongodb://localhost/graphql')

@@ -12,56 +12,50 @@ const randomInt = (min, max) => {
   return Math.floor(Math.random() * (max - min)) + min
 }
 
-const createFakeUsers = () => {
-  var processedIndex = 0
-  let users = 100
-  var count = 0
-  return new Promise((resolve, reject) => {
-    _.times(users, index => {
-      let user = new User({
-        username: Faker.internet.userName(),
-        firstName: Faker.name.firstName(),
-        lastName: Faker.name.lastName(),
-        email: Faker.internet.email()
-      })
-      user.save(error => {
-        error && console.log(error)
-        let commentCount = randomInt(0, 10)
-        count += commentCount
-        _.times(commentCount, index => {
-          let comment = new Comment ({
-            _author: user.id,
-            text: Faker.lorem.paragraph()
-          })
-          comment.save(error => {
-            error && console.log(error)
-            processedIndex++
-            if (processedIndex === count) {
-              console.log(`${users} users added. ${count - users} comments added.`)
-              resolve()
-            }
-          })
-        })
-      })
+const createFakeUsers = count => {
+  let users = Array(count).fill().map(() => {
+    return new User({
+      username: Faker.internet.userName(),
+      firstName: Faker.name.firstName(),
+      lastName: Faker.name.lastName(),
+      email: Faker.internet.email()
     })
+  })
+
+  return Promise.all(users.map(user => user.save())).then(() => {
+    console.log(`${users.length} users added.`)
+    return users
+  })
+}
+
+const createFakeComments = users => {
+  const generateComments = (user, count) => Array(count).fill().map(() => {
+    return new Comment({
+      _author: user.id,
+      text: Faker.lorem.paragraph()
+    })
+  })
+  let comments = _.flatMap(users, user => generateComments(user, randomInt(0, 10)))
+  return Promise.all(comments.map(comment => comment.save()))
+  .then(() => {
+    console.log(`${comments.length} comments added.`)
+    return comments
   })
 }
 
 const deleteTables = tables => {
-  return new Promise((resolve, reject) => {
-    let processedIndex = 0
-    tables.forEach((tableName, index, array) => {
-      db.collections[tableName].drop(error => {
-        console.log(error || `${tableName} table dropped.`)
-        processedIndex++
-        if (processedIndex === array.length) resolve()
-      })
-    })
+  return Promise.all(tables.map((tableName, index, array) => {
+    return db.collections[tableName].drop()
+  }))
+  .then(() => {
+    tables.forEach(table => console.log(`${table} table dropped.`))
   })
 }
 
+console.log('Seeding database.')
 deleteTables(['users', 'comments'])
-.then(createFakeUsers)
+.then(() => createFakeUsers(100))
+.then(createFakeComments)
 .then(() => {
   mongoose.connection.close()
 })
