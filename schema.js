@@ -8,6 +8,7 @@ import {
 } from 'graphql'
 
 import {
+  login,
   getUser,
   getUsers,
   createUser,
@@ -180,6 +181,20 @@ const mutationType = new GraphQLObjectType({
         }
       },
       resolve: (root, args) => createComment(args)
+    },
+    login: {
+      type: userType,
+      args: {
+        username: {
+          type: new GraphQLNonNull(GraphQLString),
+          description: 'Account username'
+        },
+        password: {
+          type: new GraphQLNonNull(GraphQLString),
+          description: 'Account Password'
+        }
+      },
+      resolve: (root, {username, password}) => login({username, password})
     }
   })
 })

@@ -1,4 +1,5 @@
 import mongoose, { Schema } from 'mongoose'
+import bcrypt from 'bcrypt'
 
 mongoose.Promise = global.Promise
 
@@ -29,10 +30,51 @@ const UserSchema = new Schema({
     type: String,
     unique: true,
     required: true
+  },
+  password: {
+    type: String,
+    required: true
   }
 })
 
+UserSchema.pre('save', function (next) {
+  let user = this
+  if (this.isModified('password') || this.isNew) {
+    bcrypt.genSalt(10, (err, salt) => {
+      if (err) return err
+      bcrypt.hash(user.password, salt, (err, hash) => {
+        if (err) return next(err)
+        user.password = hash
+        next()
+      })
+    })
+  } else {
+    return next()
+  }
+})
+
+UserSchema.methods.comparePassword = function (password) {
+  return new Promise((resolve, reject) => {
+    bcrypt.compare(password, this.password, (error, isMatch) => {
+      error && reject(error)
+      resolve(isMatch)
+    })
+  })
+}
+
 let User = mongoose.model('User', UserSchema)
+
+const login = ({username, password}) => {
+  const user = getUser({username})
+  const passwordMatch = user.then(user => user.comparePassword(password))
+  return Promise.all([user, passwordMatch])
+  .then(response => {
+   /**
+    * Need Promise.all().spread es6 equivalent
+    */
+    return response[1] ? response[0] : null
+  })
+}
 
 const getUser = ({_id, username}) => {
   let find = {_id, username}
@@ -121,6 +163,7 @@ const deleteUndefKeys = object => {
 
 module.exports = {
   db,
+  login,
   User,
   getUser,
   getUsers,

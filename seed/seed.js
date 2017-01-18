@@ -10,20 +10,36 @@ const randomInt = (min, max) => {
   return Math.floor(Math.random() * (max - min)) + min
 }
 
+const errorHandler = error => {
+  if (typeof error === 'string') {
+    console.error(error)
+  } else {
+    console.error(error.name + ': ' + error.message)
+  }
+  if (error.errors) {
+    Object.keys(error.errors).forEach(key => {
+      let e = error.errors[key]
+      console.error(e.name + ': ' + e.message)
+    })
+  }
+}
+
 const createFakeUsers = count => {
   fakeUsers = Array(count).fill().map(() => {
     return new User({
       username: Faker.internet.userName(),
       firstName: Faker.name.firstName(),
       lastName: Faker.name.lastName(),
-      email: Faker.internet.email()
+      email: Faker.internet.email(),
+      password: 'pa$$word'
     })
   })
 
-  return Promise.all(fakeUsers.map(user => user.save())).then(() => {
+  return Promise.all(fakeUsers.map(user => user.save()))
+  .then(() => {
     console.log(`${fakeUsers.length} users added.`)
     return fakeUsers
-  })
+  }, errorHandler)
 }
 
 const createFakeThreads = count => {
@@ -37,7 +53,7 @@ const createFakeThreads = count => {
   return Promise.all(fakeThreads.map(thread => thread.save())).then(() => {
     console.log(`${fakeThreads.length} threads added.`)
     return fakeThreads
-  })
+  }, errorHandler)
 }
 
 const createFakeComments = users => {
@@ -53,16 +69,17 @@ const createFakeComments = users => {
   .then(() => {
     console.log(`${fakeComments.length} comments added.`)
     return fakeComments
-  })
+  }, errorHandler)
 }
 
 const deleteTables = tables => {
   return Promise.all(tables.map((tableName, index, array) => {
-    return db.collections[tableName].drop()
-  }))
-  .then(() => {
-    tables.forEach(table => console.log(`${table} table dropped.`))
-  })
+    if (!db.collections[tableName]) return Promise.reject(`'${tableName}' table does not exist.`)
+    return db.collections[tableName].drop(error => {
+      if (error) Promise.reject(error)
+      else console.log(`${tableName} table dropped.`)
+    })
+  })).catch(errorHandler)
 }
 
 console.log('Seeding database.')
