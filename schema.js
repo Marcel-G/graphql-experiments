@@ -2,6 +2,7 @@ import {
   GraphQLInt,
   GraphQLList,
   GraphQLObjectType,
+  GraphQLBoolean,
   GraphQLNonNull,
   GraphQLSchema,
   GraphQLString
@@ -9,6 +10,7 @@ import {
 
 import {
   login,
+  signToken,
   getUser,
   getUsers,
   createUser,
@@ -60,6 +62,25 @@ const threadType = new GraphQLObjectType({
       type: new GraphQLList(commentType),
       description: 'A list of comments within the thread.',
       resolve: ({_id}) => getComments({ _thread: _id })
+    }
+  })
+})
+
+const authType = new GraphQLObjectType({
+  name: 'auth',
+  description: 'Authentication details',
+  fields: () => ({
+    token: {
+      type: GraphQLString,
+      description: 'JWT token on successful login'
+    },
+    success: {
+      type: GraphQLBoolean,
+      description: 'Was the login successful or not'
+    },
+    message: {
+      type: GraphQLString,
+      description: 'Details about login'
     }
   })
 })
@@ -183,7 +204,7 @@ const mutationType = new GraphQLObjectType({
       resolve: (root, args) => createComment(args)
     },
     login: {
-      type: userType,
+      type: authType,
       args: {
         username: {
           type: new GraphQLNonNull(GraphQLString),
@@ -194,7 +215,11 @@ const mutationType = new GraphQLObjectType({
           description: 'Account Password'
         }
       },
-      resolve: (root, {username, password}) => login({username, password})
+      resolve: (root, {username, password}) => (
+        login({username, password})
+        .then(signToken, reason => Promise.reject(reason))
+        .then(token => ({token, success: true}), reason => ({message: reason, success: false}))
+      )
     }
   })
 })

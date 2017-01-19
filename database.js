@@ -1,5 +1,6 @@
 import mongoose, { Schema } from 'mongoose'
 import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
 
 mongoose.Promise = global.Promise
 
@@ -65,14 +66,23 @@ UserSchema.methods.comparePassword = function (password) {
 let User = mongoose.model('User', UserSchema)
 
 const login = ({username, password}) => {
-  const user = getUser({username})
+  const user = getUser({username}).then(user => {
+    if (!user) return Promise.reject('Username not found.')
+    return user
+  })
   const passwordMatch = user.then(user => user.comparePassword(password))
-  return Promise.all([user, passwordMatch])
-  .then(response => {
-   /**
-    * Need Promise.all().spread es6 equivalent
-    */
-    return response[1] ? response[0] : null
+  return passwordMatch.then(match => {
+    if (!match) return Promise.reject('Password does not match.')
+    return user
+  })
+}
+
+const signToken = user => {
+  return new Promise((resolve, reject) => {
+    jwt.sign(user, 'shhhhh', null, (error, token) => {
+      error && reject(error)
+      resolve(token)
+    })
   })
 }
 
@@ -164,6 +174,7 @@ const deleteUndefKeys = object => {
 module.exports = {
   db,
   login,
+  signToken,
   User,
   getUser,
   getUsers,
