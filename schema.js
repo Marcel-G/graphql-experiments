@@ -129,7 +129,14 @@ const queryType = new GraphQLObjectType({
           type: GraphQLInt
         }
       },
-      resolve: (root, {limit}) => getUsers({limit})
+      resolve: (root, {limit}, {user}) => {
+        if (user) {
+          console.log(`logged in as ${user.username}`)
+        } else {
+          console.log('Not logged in')
+        }
+        return getUsers({limit})
+      }
     },
     user: {
       type: userType,
