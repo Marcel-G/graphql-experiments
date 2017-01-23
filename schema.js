@@ -20,20 +20,6 @@ import {
   createComment
 } from './database'
 
-const handleErrors = error => {
-  return {
-    errors: [error]
-  }
-}
-
-const viewerLoggedIn = (viewer, promise) => {
-  if (!viewer) {
-    return Promise.reject('NOT_LOGGED_IN')
-  } else {
-    return promise
-  }
-}
-
 const commentType = new GraphQLObjectType({
   name: 'Comment',
   description: 'A comment made by a user',
