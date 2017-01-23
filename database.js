@@ -92,7 +92,18 @@ const getUser = ({_id, username}) => {
   return User.findOne(find)
 }
 
-const getUsers = ({limit}) => User.find().limit(limit || 10)
+const accessLevel = (accessArray, level) => {
+  return accessArray && accessArray.indexOf(level) > -1
+}
+
+const getUsers = ({viewer, limit}) => {
+  if (!viewer) {
+    return Promise.reject('VIEWER_REQUIRED')
+  } else if (!accessLevel(viewer.access, 'users')) {
+    // return Promise.reject('ACCESS_DENIED')
+  }
+  return User.find().limit(limit || 10)
+}
 
 const createUser = ({username, firstName, lastName, email}) => {
   let newUser = new User({username, firstName, lastName, email})

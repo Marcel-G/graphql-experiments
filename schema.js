@@ -20,6 +20,20 @@ import {
   createComment
 } from './database'
 
+const handleErrors = error => {
+  return {
+    errors: [error]
+  }
+}
+
+const viewerLoggedIn = (viewer, promise) => {
+  if (!viewer) {
+    return Promise.reject('NOT_LOGGED_IN')
+  } else {
+    return promise
+  }
+}
+
 const commentType = new GraphQLObjectType({
   name: 'Comment',
   description: 'A comment made by a user',
@@ -129,13 +143,8 @@ const queryType = new GraphQLObjectType({
           type: GraphQLInt
         }
       },
-      resolve: (root, {limit}, {user}) => {
-        if (user) {
-          console.log(`logged in as ${user.username}`)
-        } else {
-          console.log('Not logged in')
-        }
-        return getUsers({limit})
+      resolve: (root, {limit}, {viewer}) => {
+        return getUsers({viewer, limit})
       }
     },
     user: {
@@ -146,7 +155,9 @@ const queryType = new GraphQLObjectType({
           type: new GraphQLNonNull(GraphQLString)
         }
       },
-      resolve: (root, {username}) => getUser({username})
+      resolve: (root, {username}, {viewer}) => {
+        return getUser({viewer, username})
+      }
     },
     comments: {
       type: new GraphQLList(commentType),
@@ -156,7 +167,9 @@ const queryType = new GraphQLObjectType({
           type: GraphQLInt
         }
       },
-      resolve: (root, {limit}) => getComments({limit})
+      resolve: (root, {limit}, {viewer}) => {
+        return getComments({viewer, limit})
+      }
     },
     threads: {
       type: new GraphQLList(threadType),
@@ -166,7 +179,9 @@ const queryType = new GraphQLObjectType({
           type: GraphQLInt
         }
       },
-      resolve: (root, {limit}) => getThreads({limit})
+      resolve: (root, {limit}, {viewer}) => {
+        return getThreads({viewer, limit})
+      }
     }
   })
 })
@@ -192,6 +207,10 @@ const mutationType = new GraphQLObjectType({
         email: {
           type: new GraphQLNonNull(GraphQLString),
           description: 'Email address of user'
+        },
+        password: {
+          type: new GraphQLNonNull(GraphQLString),
+          description: 'Account Password'
         }
       },
       resolve: (root, args) => createUser(args)

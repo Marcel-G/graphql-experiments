@@ -10,26 +10,15 @@ const logErrors = (err, req, res, next) => {
   next(err)
 }
 
-const graphqlOptions = () => {
-  return graphqlExpress(request => {
-    return {
-      graphiql: true,
-      pretty: true,
-      context: {user: request.user._doc || false},
-      schema: Schema
-    }
-  })
-}
-
 const startGraphQLServer = callback => {
   const {Schema} = require('./schema')
   const graphQLApp = express()
   graphQLApp.use('/graphql',
     bodyParser.json(),
-    jwt({secret: 'shhhhh', credentialsRequired: false}),
-    (err, req, res, next) => {
-      if (err) {
-        console.log(err.name, err.message)
+    jwt({secret: 'shhhhh'}),
+    (error, request, response, next) => {
+      if (error) {
+        console.log(error.name, error.message)
       }
       next()
     },
@@ -38,24 +27,14 @@ const startGraphQLServer = callback => {
         graphiql: true,
         pretty: true,
         formatError: error => ({
-          message: error.message,
-          locations: error.locations,
-          stack: error.stack
+          message: error.message
         }),
-        context: {user: request.user._doc || false},
+        context: {viewer: request.user && request.user._doc},
         schema: Schema
       }
     }))
   graphQLApp.use('/graphiql', graphiqlExpress({
     endpointURL: '/graphql'
-  }))
-  graphQLApp.use('/login', bodyParser.json(), graphqlExpress(request => {
-    return {
-      graphiql: true,
-      pretty: true,
-      context: {user: false},
-      schema: Schema
-    }
   }))
   graphQLApp.use(logErrors)
   graphQLApp.listen(GRAPHQL_PORT, () => {
